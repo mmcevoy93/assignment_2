@@ -28,11 +28,12 @@ def read_tree(bitreader):
     tree = huffman.make_tree(table)
     return tree
 
+
 def decode_byte(tree, bitreader):
     """
     Reads bits from the bit reader and traverses the tree from
     the root to a leaf. Once a leaf is reached, bits are no longer read
-    and the value of that leave is returned.
+    and the value of that leaf is returned.
 
     Args:
       bitreader: An instance of bitio.BitReader to read the tree from.
@@ -42,7 +43,21 @@ def decode_byte(tree, bitreader):
       Next byte of the compressed bit stream.
     """
 
-    pass
+    encoded_table = huffman.make_encoding_table(tree)
+    sample = 0
+
+    # might be able to improve with readbit
+    bits = bitreader.BitReader.readbits(8)
+
+    for n in encoded_table:
+        for v in encoded_table[n]:
+            if v is True:
+                sample = sample*2 + 1  # NOTE this could be wrong
+            else:
+                sample = sample*2
+
+        if sample == bits:
+            return n
 
 
 def decompress(compressed, uncompressed):
@@ -57,8 +72,7 @@ def decompress(compressed, uncompressed):
           output is written.
 
     '''
-    print(compressed, uncompressed)
-    pass
+    
 
 
 def write_tree(tree, bitwriter):
