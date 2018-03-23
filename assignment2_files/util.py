@@ -1,6 +1,6 @@
 # The functions in this file are to be implemented by students.
-
-import bitio
+from bitio import BitReader
+from bitio import BitWriter
 import huffman
 
 
@@ -24,6 +24,7 @@ def read_tree(bitreader):
     Returns:
       A Huffman tree constructed according to the given description.
     '''
+
     table = huffman.make_freq_table(bitreader)
     tree = huffman.make_tree(table)
     return tree
@@ -45,17 +46,14 @@ def decode_byte(tree, bitreader):
 
     encoded_table = huffman.make_encoding_table(tree)
     sample = 0
-
-    # might be able to improve with readbit
-    bits = bitreader.BitReader.readbits(8)
-
+    bits = 0
     for n in encoded_table:
         for v in encoded_table[n]:
             if v is True:
-                sample = sample*2 + 1  # NOTE this could be wrong
+                sample *= 2  # NOTE this could be wrong
+                sample += 1
             else:
-                sample = sample*2
-
+                sample *= 2
         if sample == bits:
             return n
 
@@ -72,7 +70,25 @@ def decompress(compressed, uncompressed):
           output is written.
 
     '''
-    
+    br = BitReader(compressed)
+    print("********************")
+    while True:
+        try:
+            bits_to_decode = br.readbits(1512)
+        except EOFError:
+            break
+        print(bin(bits_to_decode), "LLLLLLLLLLLLL")
+    print("********************")
+
+    br = BitWriter(uncompressed)
+    br.writebit(0)
+    br.writebit(0)
+    br.writebit(1)
+    br.writebit(1)
+    br.writebit(0)
+    br.writebit(0)
+    br.writebit(1)
+    br.writebit(0)
 
 
 def write_tree(tree, bitwriter):
