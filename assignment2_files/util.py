@@ -43,19 +43,24 @@ def decode_byte(tree, bitreader):
     Returns:
       Next byte of the compressed bit stream.
     """
-
+    br = BitReader(bitreader)
     encoded_table = huffman.make_encoding_table(tree)
     sample = 0
     bits = 0
+    better_table = {}
+    b = br.readbit()
     for n in encoded_table:
         for v in encoded_table[n]:
             if v is True:
-                sample *= 2  # NOTE this could be wrong
+                sample *= 2
                 sample += 1
             else:
                 sample *= 2
-        if sample == bits:
-            return n
+        better_table[sample] = n
+        sample = 0
+    print(better_table)
+
+
 
 
 def decompress(compressed, uncompressed):
@@ -70,25 +75,33 @@ def decompress(compressed, uncompressed):
           output is written.
 
     '''
+    file = open('gtest.txt', 'wb')
+    bw = BitWriter(file)
     br = BitReader(compressed)
-    print("********************")
-    while True:
-        try:
-            bits_to_decode = br.readbits(1512)
-        except EOFError:
-            break
-        print(bin(bits_to_decode), "LLLLLLLLLLLLL")
-    print("********************")
+    bits = br.readbits(0)
+    bity = br.readbits(1512)
+    bw.writebits(bits, 0)
+    bw.flush()
+    file.closed
+    file = open('test.txt', 'rb')
 
-    br = BitWriter(uncompressed)
-    br.writebit(0)
-    br.writebit(0)
-    br.writebit(1)
-    br.writebit(1)
-    br.writebit(0)
-    br.writebit(0)
-    br.writebit(1)
-    br.writebit(0)
+    tree = read_tree(file)
+    file.closed
+    file = open('gtest.txt', 'wb')
+    bw = BitWriter(file)
+    bw.writebits(bity, 1512)
+    file.closed
+    file = open('test.txt', 'rb')
+    br = BitReader(file)
+
+
+    out = decode_byte(tree, file)
+    print(br.readbits(100))
+
+
+    bw = BitWriter(uncompressed)
+
+
 
 
 def write_tree(tree, bitwriter):
