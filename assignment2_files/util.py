@@ -24,7 +24,7 @@ def read_tree(bitreader):
     Returns:
       A Huffman tree constructed according to the given description.
     '''
-
+    #TODO Stop it from reading everything. Just what we want
     table = huffman.make_freq_table(bitreader)
     tree = huffman.make_tree(table)
     return tree
@@ -43,25 +43,24 @@ def decode_byte(tree, bitreader):
     Returns:
       Next byte of the compressed bit stream.
     """
+    #
     br = BitReader(bitreader)
     encoded_table = huffman.make_encoding_table(tree)
+    #print(encoded_table)
     sample = 0
     bits = 0
     better_table = {}
-    b = br.readbit()
+    #b = br.readbit()
     for n in encoded_table:
         for v in encoded_table[n]:
             if v is True:
-                sample *= 2
+                sample *= 2  # Next byte of the compressed bit stream.
                 sample += 1
             else:
                 sample *= 2
         better_table[sample] = n
         sample = 0
     print(better_table)
-
-
-
 
 def decompress(compressed, uncompressed):
     '''First, read a Huffman tree from the 'compressed' stream using your
@@ -75,32 +74,21 @@ def decompress(compressed, uncompressed):
           output is written.
 
     '''
-    file = open('gtest.txt', 'wb')
-    bw = BitWriter(file)
-    br = BitReader(compressed)
-    bits = br.readbits(0)
-    bity = br.readbits(1512)
-    bw.writebits(bits, 0)
-    bw.flush()
-    file.closed
-    file = open('test.txt', 'rb')
+    tree = read_tree(compressed)
 
-    tree = read_tree(file)
-    file.closed
-    file = open('gtest.txt', 'wb')
-    bw = BitWriter(file)
-    bw.writebits(bity, 1512)
-    file.closed
-    file = open('test.txt', 'rb')
-    br = BitReader(file)
-
-
-    out = decode_byte(tree, file)
-    print(br.readbits(100))
-
+    encoded_table = huffman.make_encoding_table(tree)
+    decode_byte(tree, compressed)
 
     bw = BitWriter(uncompressed)
+    bw.writebit(0b0)
+    bw.writebit(0b1)
+    bw.writebit(0b0)
+    bw.writebit(0b1)
 
+    bw.writebit(0b0)
+    bw.writebit(0b0)
+    bw.writebit(0b1)
+    bw.writebit(0b0)
 
 
 
