@@ -2,7 +2,7 @@
 from bitio import BitReader
 from bitio import BitWriter
 import huffman
-from binary_heap import BinaryHeap
+import time
 
 
 def read_tree(bitreader):
@@ -26,22 +26,25 @@ def read_tree(bitreader):
       A Huffman tree constructed according to the given description.
     '''
     tree = huffman.TreeBranch(True, True)
-    bit = bitreader.readbit()
 
-    def re_tree(bitreader, tree):
+    def re_tree():
         bit = bitreader.readbit()
         if bit == 1:
-            tree.left = re_tree(bitreader, tree)
-            tree.right = re_tree(bitreader, tree)
+            tree.left = re_tree()
+            tree.right = re_tree()
         elif bit == 0:
             bit = bitreader.readbit()
             if bit == 1:
                 bits = bitreader.readbits(8)
-                return huffman.TreeLeaf(bits)
+                print(hex(bits))
+                return (bits)
             elif bit == 0:
                 return huffman.TreeLeaf(None)
         return tree
-    return re_tree(bitreader, tree)
+    if bitreader.readbit() == 1:
+        return re_tree()
+    else:
+        return None
 
 
 def decode_byte(tree, bitreader):
@@ -57,6 +60,7 @@ def decode_byte(tree, bitreader):
     Returns:
       Next byte of the compressed bit stream.
     """
+
     return 0b01010010
 
 
@@ -74,9 +78,12 @@ def decompress(compressed, uncompressed):
 ``
     '''
     br = BitReader(compressed)
-    # print(bin(br.readbits(700)),"what")
+    #print(bin(br.readbits(700)),"what")
     tree = read_tree(br)
     print(tree.left.left.left.left.left)
+    # encoded_table = huffman.make_encoding_table(tree)
+    # print(encoded_table)
+    # print(bin(br.readbits(100)))
     bw = BitWriter(uncompressed)
     while True:
         try:
@@ -97,7 +104,6 @@ def decompress(compressed, uncompressed):
     bw.writebit(0b0)
 
 
-
 def write_tree(tree, bitwriter):
     '''Write the specified Huffman tree to the given bit writer.  The
     tree is written in the format described above for the read_tree
@@ -109,6 +115,10 @@ def write_tree(tree, bitwriter):
       tree: A Huffman tree.
       bitwriter: An instance of bitio.BitWriter to write the tree to.
     '''
+    bw = BitWriter(bitwriter)
+
+    bw.writebits(0b111, 3)
+
     pass
 
 
