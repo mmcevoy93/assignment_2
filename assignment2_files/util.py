@@ -2,6 +2,7 @@
 from bitio import BitReader
 from bitio import BitWriter
 import huffman
+from binary_heap import BinaryHeap
 
 
 def read_tree(bitreader):
@@ -24,21 +25,24 @@ def read_tree(bitreader):
     Returns:
       A Huffman tree constructed according to the given description.
     '''
+    tree = []
 
-    def retree(bitreader, left, right):
+    def re_tree(bitreader, tree, left, right):
         bit = bitreader.readbit()
-        if bit == 0:
+        if bit == 1:
+            tree.append(huffman.TreeBranch(True, False))
+            re_tree(bitreader, tree, ~left, ~right)
+        elif bit == 0:
             bit = bitreader.readbit()
             if bit == 1:
                 bits = bitreader.readbits(8)
-                return huffman.TreeLeaf(bits)
+                tree.append(huffman.TreeLeaf(bits))
+                return tree
             elif bit == 0:
-                return huffman.TreeLeaf(None)
-        elif bit == 1:
-            huffman.TreeBranch(left, right)
-            retree(bitreader, ~left, ~right)
-
-    return retree(bitreader, True, False)
+                tree.append(huffman.TreeLeaf(None))
+                return tree
+        return tree
+    return re_tree(bitreader, tree, True, False)
 
 
 def decode_byte(tree, bitreader):
@@ -54,7 +58,7 @@ def decode_byte(tree, bitreader):
     Returns:
       Next byte of the compressed bit stream.
     """
-    #
+    return 0b01010010
 
 
 def decompress(compressed, uncompressed):
@@ -70,11 +74,20 @@ def decompress(compressed, uncompressed):
 
     '''
     br = BitReader(compressed)
-    tree = read_tree(br)
+    #  print(bin(br.readbits(700)),"what")
+    tree = {}
+
     print(tree)
 
-
     bw = BitWriter(uncompressed)
+    while True:
+        try:
+        
+            byte = decode_byte(tree, br)
+            bw.writebits(byte, 8)
+        except EOFError:
+            break
+
     bw.writebit(0b0)
     bw.writebit(0b1)
     bw.writebit(0b0)
