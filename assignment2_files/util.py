@@ -25,24 +25,23 @@ def read_tree(bitreader):
     Returns:
       A Huffman tree constructed according to the given description.
     '''
-    tree = []
+    tree = huffman.TreeBranch(True, True)
+    bit = bitreader.readbit()
 
-    def re_tree(bitreader, tree, left, right):
+    def re_tree(bitreader, tree):
         bit = bitreader.readbit()
         if bit == 1:
-            tree.append(huffman.TreeBranch(True, False))
-            re_tree(bitreader, tree, ~left, ~right)
+            tree.left = re_tree(bitreader, tree)
+            tree.right = re_tree(bitreader, tree)
         elif bit == 0:
             bit = bitreader.readbit()
             if bit == 1:
                 bits = bitreader.readbits(8)
-                tree.append(huffman.TreeLeaf(bits))
-                return tree
+                return huffman.TreeLeaf(bits)
             elif bit == 0:
-                tree.append(huffman.TreeLeaf(None))
-                return tree
+                return huffman.TreeLeaf(None)
         return tree
-    return re_tree(bitreader, tree, True, False)
+    return re_tree(bitreader, tree)
 
 
 def decode_byte(tree, bitreader):
@@ -72,17 +71,16 @@ def decompress(compressed, uncompressed):
       uncompressed: A writable file stream to which the uncompressed
           output is written.
 
+``
     '''
     br = BitReader(compressed)
-    #  print(bin(br.readbits(700)),"what")
-    tree = {}
-
-    print(tree)
-
+    # print(bin(br.readbits(700)),"what")
+    tree = read_tree(br)
+    print(tree.left.left.left.left.left)
     bw = BitWriter(uncompressed)
     while True:
         try:
-        
+            bit = br.readbit()
             byte = decode_byte(tree, br)
             bw.writebits(byte, 8)
         except EOFError:
