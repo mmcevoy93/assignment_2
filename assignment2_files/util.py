@@ -24,10 +24,21 @@ def read_tree(bitreader):
     Returns:
       A Huffman tree constructed according to the given description.
     '''
-    #TODO Stop it from reading everything. Just what we want
-    table = huffman.make_freq_table(bitreader)
-    tree = huffman.make_tree(table)
-    return tree
+
+    def retree(bitreader, left, right):
+        bit = bitreader.readbit()
+        if bit == 0:
+            bit = bitreader.readbit()
+            if bit == 1:
+                bits = bitreader.readbits(8)
+                return huffman.TreeLeaf(bits)
+            elif bit == 0:
+                return huffman.TreeLeaf(None)
+        elif bit == 1:
+            huffman.TreeBranch(left, right)
+            retree(bitreader, ~left, ~right)
+
+    return retree(bitreader, True, False)
 
 
 def decode_byte(tree, bitreader):
@@ -44,23 +55,7 @@ def decode_byte(tree, bitreader):
       Next byte of the compressed bit stream.
     """
     #
-    br = BitReader(bitreader)
-    encoded_table = huffman.make_encoding_table(tree)
-    #print(encoded_table)
-    sample = 0
-    bits = 0
-    better_table = {}
-    #b = br.readbit()
-    for n in encoded_table:
-        for v in encoded_table[n]:
-            if v is True:
-                sample *= 2  # Next byte of the compressed bit stream.
-                sample += 1
-            else:
-                sample *= 2
-        better_table[sample] = n
-        sample = 0
-    print(better_table)
+
 
 def decompress(compressed, uncompressed):
     '''First, read a Huffman tree from the 'compressed' stream using your
@@ -74,10 +69,10 @@ def decompress(compressed, uncompressed):
           output is written.
 
     '''
-    tree = read_tree(compressed)
+    br = BitReader(compressed)
+    tree = read_tree(br)
+    print(tree)
 
-    encoded_table = huffman.make_encoding_table(tree)
-    decode_byte(tree, compressed)
 
     bw = BitWriter(uncompressed)
     bw.writebit(0b0)
