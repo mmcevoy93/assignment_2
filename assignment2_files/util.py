@@ -1,7 +1,6 @@
 # The functions in this file are to be implemented by students.
-import bitio  # changed this cause i dont know why they didnt in the first place
+import bitio  # changed this for convenience
 import huffman
-import time
 
 
 def read_tree(bitreader):
@@ -57,7 +56,7 @@ def decode_byte(tree, bitreader):
       Next byte of the compressed bit stream.
     """
     # if instance is built into python, and is used to check
-    # when we reach our leaf with the value inside it
+    # when we reach the instance tree leaf, with the value inside it
     if isinstance(tree, huffman.TreeBranch):
         bit = bitreader.readbit()
         if bit == 0:
@@ -127,6 +126,29 @@ def write_tree(tree, bitwriter):
       tree: A Huffman tree.
       bitwriter: An instance of bitio.BitWriter to write the tree to.
     '''
+    # we will build our tree by using isinstance to check if we are at a branch
+    # or if we are at a leaf. In the case we find a leaf, we use bitwriter to
+    # write the specific byte at that leaf to our trees
+
+    if isinstance(tree, huffman.TreeLeaf):
+        if tree.value == None:
+            # This case is represented by 00
+            bitwriter.writebit(False)
+            bitwriter.writebit(False)
+        else:
+            # This is represented with 01, in the event we have a value at leaf
+            # So we write the 8 bits
+            bitwriter.writebit(False)
+            bitwriter.writebit(True)
+            bitwriter.writebits(tree.value, 8)
+
+    elif isinstance(tree, huffman.TreeBranch):
+        # This is represented with just a 1
+        bitwriter.writebit(True)
+        # So now we will recursively call this function to get the branches
+        # at the visited node
+        write_tree(tree.left, bitwriter)
+        write_tree(tree.right, bitwriter)
 
     pass
 
@@ -144,4 +166,32 @@ def compress(tree, uncompressed, compressed):
       compressed: A file stream that will receive the tree description
           and the coded input data.
     '''
+    # Same initial setup as decompress
+    reader = bitio.BitReader(uncompressed)
+    writer = bitio.BitWriter(compressed)
+
+    # This time we are writing the tree instead
+    write_tree(tree, writer)
+
+    # key is a dictionary that is used to find the specific bitsequence for a
+    # specific byte using the huffman coding
+    key = huffman.make_encoding_table(tree)
+
+    while 1:
+        try:
+            # use the key to map the specific byte to the corresponding
+            # huffman bitsequence. By looping through the whole file, we can
+            # compress every byte to a huffman compressed bit sequence, thus
+            # compressing the whole file to a .huff extension
+
+            byte = reader.readbits(8)
+            bitsequence = key[byte]
+            for bit in bitsequence:
+                writer.writebit(bit)
+
+        # This flag is hear to indicate we have reached the end of the file
+        # and to thus stop compressing
+        except EOFError:
+            break
+
     pass
